@@ -23,14 +23,14 @@ type Config struct {
 func main() {
 	// Parse command line flags
 	var fromFlag, toFlag, cfgFlag string
-	flag.StringVar(&fromFlag, "from", "", "Start month in YYYY-MM format")
-	flag.StringVar(&toFlag, "to", "", "End month in YYYY-MM format")
+	flag.StringVar(&fromFlag, "from", "", "Start month in YYYY-MM format (optional, defaults to current month)")
+	flag.StringVar(&toFlag, "to", "", "End month in YYYY-MM format (optional, defaults to -from)")
 	flag.StringVar(&cfgFlag, "cfg", "./.env", "Path to configuration file")
 	flag.Parse()
 
-	// Validate from/to flags: either both present or neither
-	if (fromFlag == "") != (toFlag == "") {
-		log.Fatal("Both -from and -to must be specified together, or neither")
+	// Validate from/to flags: -to requires -from
+	if toFlag != "" && fromFlag == "" {
+		log.Fatal("-to requires -from")
 	}
 
 	// Load environment variables
@@ -59,6 +59,10 @@ func main() {
 		endDate = currentMonth + "-31" // This works for all months due to Go's time parsing
 		monthRange = currentMonth
 	} else {
+		// fromFlag is guaranteed to be non-empty if toFlag is non-empty (validation above)
+		if toFlag == "" {
+			toFlag = fromFlag
+		}
 		// Validate month formats
 		fromTime, err := time.Parse("2006-01", fromFlag)
 		if err != nil {
@@ -68,13 +72,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("Invalid -to format: %v", err)
 		}
-		// Validate that from is before to
-		if !fromTime.Before(toTime) {
-			log.Fatalf("-from must be before -to")
+		// Validate that from is not after to
+		if fromTime.After(toTime) {
+			log.Fatalf("-from must be before or equal to -to")
 		}
 		startDate = fromFlag + "-01"
 		endDate = toFlag + "-31"
-		monthRange = fmt.Sprintf("%s-%s", fromFlag, toFlag)
+		if fromFlag == toFlag {
+			monthRange = fromFlag
+		} else {
+			monthRange = fmt.Sprintf("%s-%s", fromFlag, toFlag)
+		}
 	}
 
 	// Create file

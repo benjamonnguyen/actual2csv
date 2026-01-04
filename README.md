@@ -7,4 +7,4 @@ NOTE: I use this to import my Actual data to [hledger](https://hledger.org).
 YMMV with the CSV format.
 
 ## Usage
-`actual2csv [-from YYYY-MM -to YYYY-MM] [-cfg configFilePath]`
+`actual2csv [-from YYYY-MM [-to YYYY-MM]] [-cfg configFilePath]`
