@@ -60,6 +60,16 @@ func main() {
 	}
 	actualClient := NewActualClient(cfg, client)
 
+	// Build Categories map
+	categoriesResp, err := actualClient.FetchCategories()
+	if err != nil {
+		failWithMsg(file, fmt.Sprintf("Failed to fetch categories: %s", err))
+	}
+	categoryNames := make(map[string]string)
+	for _, category := range categoriesResp.Data {
+		categoryNames[category.ID] = category.Name
+	}
+
 	// Fetch accounts
 	accountsResp, err := actualClient.FetchAccounts()
 	if err != nil {
@@ -69,7 +79,7 @@ func main() {
 	log.Printf("Found %d accounts", len(accounts))
 
 	// Write txns
-	csvWriter := NewCSVWriter(file)
+	csvWriter := NewCSVWriter(file, categoryNames)
 	var totalTransactions int
 	for _, account := range accounts {
 		if account.Closed {

@@ -3,5 +3,8 @@ Download [Actual Budget](https://github.com/actualbudget/actual) transactions as
 
 Requires setting up [local REST API](https://github.com/jhonderson/actual-http-api).
 
+NOTE: I use this to import my Actual data to [beancount](https://github.com/beancount/beancount).
+YMMV with the CSV format.
+
 ## Usage
 `actual2csv [-from YYYY-MM -to YYYY-MM] [-cfg configFilePath]`

@@ -21,14 +21,15 @@ type FetchTransactionsResponse struct {
 }
 
 type Transaction struct {
-	ID       string  `json:"id"`
-	Account  string  `json:"account"`
-	Category *string `json:"category,omitempty"`
-	Amount   int64   `json:"amount"`
-	// Payee         string  `json:"payee"` // This is a UUID, not name
-	Notes         *string `json:"notes"`
-	Date          string  `json:"date"` // YYYY-MM-DD
-	ImportedPayee *string `json:"imported_payee,omitempty"`
+	ID         string `json:"id"`
+	AccountID  string `json:"account"`
+	CategoryID string `json:"category"`
+	Amount     int64  `json:"amount"`
+	PayeeID    string `json:"payee"`
+	Notes      string `json:"notes"`
+	Date       string `json:"date"` // YYYY-MM-DD
+	Error      string `json:"error"`
+	// ImportedPayee *string `json:"imported_payee,omitempty"`
 	// Cleared       bool    `json:"cleared"`
 	// Tombstone     bool    `json:"tombstone"`
 	// Additional fields that may be present but not used:
@@ -36,7 +37,6 @@ type Transaction struct {
 	// IsChild             bool     `json:"is_child,omitempty"`
 	// ParentID            *string  `json:"parent_id,omitempty"`
 	// ImportedID          *string  `json:"imported_id,omitempty"`
-	Error *string `json:"error,omitempty"`
 	// StartingBalanceFlag bool     `json:"starting_balance_flag,omitempty"`
 	// TransferID          *string  `json:"transfer_id,omitempty"`
 	// SortOrder           int64    `json:"sort_order,omitempty"`
@@ -44,32 +44,29 @@ type Transaction struct {
 	// Subtransactions     []string `json:"subtransactions,omitempty"`
 }
 
+type FetchCategoriesResponse struct {
+	Data []Category `json:"data"`
+}
+
+type Category struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type FetchPayeesResponse struct {
+	Data []Payee `json:"data"`
+}
+
+type Payee struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type ActualClient interface {
 	FetchAccounts() (FetchAccountsResponse, error)
 	FetchTransactions(accountID, startDate, endDate string) (FetchTransactionsResponse, error)
-	/* @implement FetchCategories() (FetchCategoriesResponse, error)
-	 path: /budgets/{budgetSyncId}/categories
-	 payload example: {
-		"data": [
-			{
-				"id": "106963b3-ab82-4734-ad70-1d7dc2a52ff4",
-				"name": "For Spending",
-			}
-		]
-	}
-	*/
-
-	/* @implement FetchPayees() (FetchPayeesResponse, error)
-	 path: /budgets/{budgetSyncId}/payees
-	 payload example: {
-		"data": [
-			{
-				"id": "f733399d-4ccb-4758-b208-7422b27f650a",
-				"name": "Fidelity",
-			}
-		]
-	}
-	*/
+	FetchCategories() (FetchCategoriesResponse, error)
+	FetchPayees() (FetchPayeesResponse, error)
 }
 
 type actualClient struct {
@@ -142,4 +139,58 @@ func (c *actualClient) FetchTransactions(accountID, startDate, endDate string) (
 	}
 
 	return transactionsResp, nil
+}
+
+func (c *actualClient) FetchCategories() (FetchCategoriesResponse, error) {
+	url := fmt.Sprintf("%s/budgets/%s/categories", c.cfg.ActualAPIURL, c.cfg.BudgetSyncID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return FetchCategoriesResponse{}, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("x-api-key", c.cfg.ActualAPIKey)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return FetchCategoriesResponse{}, fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close() //nolint
+
+	if resp.StatusCode != http.StatusOK {
+		return FetchCategoriesResponse{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var categoriesResp FetchCategoriesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&categoriesResp); err != nil {
+		return FetchCategoriesResponse{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return categoriesResp, nil
+}
+
+func (c *actualClient) FetchPayees() (FetchPayeesResponse, error) {
+	url := fmt.Sprintf("%s/budgets/%s/payees", c.cfg.ActualAPIURL, c.cfg.BudgetSyncID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return FetchPayeesResponse{}, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("x-api-key", c.cfg.ActualAPIKey)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return FetchPayeesResponse{}, fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close() //nolint
+
+	if resp.StatusCode != http.StatusOK {
+		return FetchPayeesResponse{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var payeesResp FetchPayeesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payeesResp); err != nil {
+		return FetchPayeesResponse{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return payeesResp, nil
 }

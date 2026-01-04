@@ -1,4 +1,4 @@
-module github.com/benjamonnguyen/actual2beancount
+module github.com/benjamonnguyen/actual2csv
 
 go 1.25.1
 
