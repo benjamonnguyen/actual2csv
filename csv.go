@@ -9,6 +9,7 @@ import (
 var headers = []string{
 	"account",
 	"date",
+	"payee",
 	"amount",
 	"category",
 	"notes",
@@ -22,9 +23,10 @@ type CSVWriter interface {
 type csvWriter struct {
 	w             *csv.Writer
 	categoryNames map[string]string
+	payeeNames    map[string]string
 }
 
-func NewCSVWriter(w io.Writer, categoryNames map[string]string) CSVWriter {
+func NewCSVWriter(w io.Writer, categoryNames, payeeNames map[string]string) CSVWriter {
 	o := &csvWriter{
 		w:             csv.NewWriter(w),
 		categoryNames: categoryNames,
@@ -53,6 +55,13 @@ func (w *csvWriter) Add(acct Account, txns []Transaction) error {
 }
 
 func (w *csvWriter) transactionToRow(account Account, transaction Transaction) []string {
+	payee := "FIXME"
+	if transaction.PayeeID != "" {
+		if p := w.payeeNames[transaction.PayeeID]; p != "" {
+			payee = p
+		}
+	}
+
 	category := "FIXME"
 	if transaction.CategoryID != "" {
 		if c := w.categoryNames[transaction.CategoryID]; c != "" {
@@ -73,6 +82,7 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 	return []string{
 		account.Name,
 		transaction.Date,
+		payee,
 		amount,
 		category,
 		notes,

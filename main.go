@@ -95,7 +95,7 @@ func main() {
 	}
 	actualClient := NewActualClient(cfg, client)
 
-	// Build Categories map
+	// Build name maps
 	categoriesResp, err := actualClient.FetchCategories()
 	if err != nil {
 		failWithMsg(file, fmt.Sprintf("Failed to fetch categories: %s", err))
@@ -105,6 +105,14 @@ func main() {
 		categoryNames[category.ID] = category.Name
 	}
 
+	payeesResp, err := actualClient.FetchPayees()
+	if err != nil {
+		failWithMsg(file, fmt.Sprintf("Failed to fetch payees: %s", err))
+	}
+	payeeNames := make(map[string]string)
+	for _, payee := range payeesResp.Data {
+		payeeNames[payee.ID] = payee.Name
+	}
 	// Fetch accounts
 	accountsResp, err := actualClient.FetchAccounts()
 	if err != nil {
@@ -114,7 +122,7 @@ func main() {
 	log.Printf("Found %d accounts", len(accounts))
 
 	// Write txns
-	csvWriter := NewCSVWriter(file, categoryNames)
+	csvWriter := NewCSVWriter(file, categoryNames, payeeNames)
 	var totalTransactions int
 	for _, account := range accounts {
 		if account.Closed {
