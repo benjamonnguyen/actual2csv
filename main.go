@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,9 +21,21 @@ type Config struct {
 }
 
 func main() {
+	// Parse command line flags
+	var fromFlag, toFlag, cfgFlag string
+	flag.StringVar(&fromFlag, "from", "", "Start month in YYYY-MM format")
+	flag.StringVar(&toFlag, "to", "", "End month in YYYY-MM format")
+	flag.StringVar(&cfgFlag, "cfg", "./.env", "Path to configuration file")
+	flag.Parse()
+
+	// Validate from/to flags: either both present or neither
+	if (fromFlag == "") != (toFlag == "") {
+		log.Fatal("Both -from and -to must be specified together, or neither")
+	}
+
 	// Load environment variables
-	if err := godotenv.Load("./.env"); err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+	if err := godotenv.Load(cfgFlag); err != nil {
+		log.Printf("Warning: Error loading configuration file: %v", err)
 	}
 
 	cfg := Config{
@@ -37,16 +50,38 @@ func main() {
 		log.Fatal("Missing required environment variables: BUDGET_SYNC_ID, ACTUAL_API_KEY, ACTUAL_API_URL")
 	}
 
-	// Get current month in YYYY-MM format
-	currentMonth := time.Now().Local().Format("2006-01")
-	startDate := currentMonth + "-01"
-	endDate := currentMonth + "-31" // This works for all months due to Go's time parsing
+	// Determine date range based on flags
+	var startDate, endDate, monthRange string
+	if fromFlag == "" && toFlag == "" {
+		// Use current month
+		currentMonth := time.Now().Local().Format("2006-01")
+		startDate = currentMonth + "-01"
+		endDate = currentMonth + "-31" // This works for all months due to Go's time parsing
+		monthRange = currentMonth
+	} else {
+		// Validate month formats
+		fromTime, err := time.Parse("2006-01", fromFlag)
+		if err != nil {
+			log.Fatalf("Invalid -from format: %v", err)
+		}
+		toTime, err := time.Parse("2006-01", toFlag)
+		if err != nil {
+			log.Fatalf("Invalid -to format: %v", err)
+		}
+		// Validate that from is before to
+		if !fromTime.Before(toTime) {
+			log.Fatalf("-from must be before -to")
+		}
+		startDate = fromFlag + "-01"
+		endDate = toFlag + "-31"
+		monthRange = fmt.Sprintf("%s-%s", fromFlag, toFlag)
+	}
 
 	// Create file
 	if err := os.MkdirAll(cfg.TransactionOutputDir, 0o755); err != nil {
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
-	filename := fmt.Sprintf("%s.csv", currentMonth)
+	filename := fmt.Sprintf("%s.csv", monthRange)
 	filepath := filepath.Join(cfg.TransactionOutputDir, filename)
 	file, err := os.Create(filepath)
 	if err != nil {
@@ -111,7 +146,7 @@ func main() {
 		return
 	}
 
-	log.Printf("Written %d total transactions to CSV for month %s", totalTransactions, currentMonth)
+	log.Printf("Written %d total transactions to CSV for range %s", totalTransactions, monthRange)
 }
 
 func getEnv(key, defaultValue string) string {
