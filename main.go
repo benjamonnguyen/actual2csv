@@ -100,19 +100,20 @@ func main() {
 	if err != nil {
 		failWithMsg(file, fmt.Sprintf("Failed to fetch categories: %s", err))
 	}
-	categoryNames := make(map[string]string)
+	categoryMap := make(map[string]Category)
 	for _, category := range categoriesResp.Data {
-		categoryNames[category.ID] = category.Name
+		categoryMap[category.ID] = category
 	}
 
 	payeesResp, err := actualClient.FetchPayees()
 	if err != nil {
 		failWithMsg(file, fmt.Sprintf("Failed to fetch payees: %s", err))
 	}
-	payeeNames := make(map[string]string)
+	payeeMap := make(map[string]Payee)
 	for _, payee := range payeesResp.Data {
-		payeeNames[payee.ID] = payee.Name
+		payeeMap[payee.ID] = payee
 	}
+
 	// Fetch accounts
 	accountsResp, err := actualClient.FetchAccounts()
 	if err != nil {
@@ -122,7 +123,7 @@ func main() {
 	log.Printf("Found %d accounts", len(accounts))
 
 	// Write txns
-	csvWriter := NewCSVWriter(file, categoryNames, payeeNames)
+	csvWriter := NewCSVWriter(file, categoryMap, payeeMap)
 	var totalTransactions int
 	for _, account := range accounts {
 		if account.Closed {
@@ -146,7 +147,7 @@ func main() {
 			failWithMsg(file, fmt.Sprintf("Failed to write transactions for account %s: %v", account.Name, err))
 		}
 		totalTransactions += len(transactions)
-		log.Printf("Added %d transactions for account %s", len(transactions), account.Name)
+		log.Printf("Added %d transactions for account %s (%s)", len(transactions), account.Name, account.ID)
 	}
 
 	if totalTransactions == 0 {

@@ -49,8 +49,9 @@ type FetchCategoriesResponse struct {
 }
 
 type Category struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	IsIncome bool   `json:"is_income"`
 }
 
 type FetchPayeesResponse struct {

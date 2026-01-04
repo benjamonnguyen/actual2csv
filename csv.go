@@ -21,15 +21,16 @@ type CSVWriter interface {
 }
 
 type csvWriter struct {
-	w             *csv.Writer
-	categoryNames map[string]string
-	payeeNames    map[string]string
+	w           *csv.Writer
+	categoryMap map[string]Category
+	payeeMap    map[string]Payee
 }
 
-func NewCSVWriter(w io.Writer, categoryNames, payeeNames map[string]string) CSVWriter {
+func NewCSVWriter(w io.Writer, categories map[string]Category, payeeMap map[string]Payee) CSVWriter {
 	o := &csvWriter{
-		w:             csv.NewWriter(w),
-		categoryNames: categoryNames,
+		w:           csv.NewWriter(w),
+		categoryMap: categories,
+		payeeMap:    payeeMap,
 	}
 	if err := o.w.Write(headers); err != nil {
 		panic(err)
@@ -55,17 +56,22 @@ func (w *csvWriter) Add(acct Account, txns []Transaction) error {
 }
 
 func (w *csvWriter) transactionToRow(account Account, transaction Transaction) []string {
-	payee := "FIXME"
-	if transaction.PayeeID != "" {
-		if p := w.payeeNames[transaction.PayeeID]; p != "" {
-			payee = p
-		}
+	payeeName := "FIXME"
+	if p := w.payeeMap[transaction.PayeeID]; p != (Payee{}) {
+		payeeName = p.Name
 	}
 
-	category := "FIXME"
-	if transaction.CategoryID != "" {
-		if c := w.categoryNames[transaction.CategoryID]; c != "" {
-			category = c
+	accountName := "FIXME"
+	categoryName := "FIXME"
+	if c := w.categoryMap[transaction.CategoryID]; c != (Category{}) {
+		if c.IsIncome {
+			// flip posting source / destination
+			transaction.Amount *= -1
+			categoryName = account.Name
+			accountName = c.Name
+		} else {
+			categoryName = c.Name
+			accountName = account.Name
 		}
 	}
 
@@ -80,11 +86,11 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 	amount := fmt.Sprintf("%.2f", float64(transaction.Amount)/100.0)
 
 	return []string{
-		account.Name,
+		accountName,
 		transaction.Date,
-		payee,
+		payeeName,
 		amount,
-		category,
+		categoryName,
 		notes,
 		errorMsg,
 	}
