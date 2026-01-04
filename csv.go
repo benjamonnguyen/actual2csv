@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
+	"strconv"
 )
 
 var headers = []string{
@@ -56,13 +56,12 @@ func (w *csvWriter) Add(acct Account, txns []Transaction) error {
 }
 
 func (w *csvWriter) transactionToRow(account Account, transaction Transaction) []string {
-	payeeName := "FIXME"
+	var accountName, payeeName, categoryName string
+
 	if p := w.payeeMap[transaction.PayeeID]; p != (Payee{}) {
 		payeeName = p.Name
 	}
 
-	accountName := "FIXME"
-	categoryName := "FIXME"
 	if c := w.categoryMap[transaction.CategoryID]; c != (Category{}) {
 		if c.IsIncome {
 			// flip posting source / destination
@@ -75,15 +74,7 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 		}
 	}
 
-	notes := transaction.Notes
-
-	errorMsg := ""
-	if transaction.Error != "" {
-		errorMsg = "[FIXME] " + transaction.Error
-	}
-
-	// Convert amount from cents to dollars with 2 decimal places
-	amount := fmt.Sprintf("%.2f", float64(transaction.Amount)/100.0)
+	amount := strconv.Itoa(transaction.Amount)
 
 	return []string{
 		accountName,
@@ -91,7 +82,7 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 		payeeName,
 		amount,
 		categoryName,
-		notes,
-		errorMsg,
+		transaction.Notes,
+		transaction.Error,
 	}
 }

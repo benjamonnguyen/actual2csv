@@ -24,7 +24,7 @@ type Transaction struct {
 	ID         string `json:"id"`
 	AccountID  string `json:"account"`
 	CategoryID string `json:"category"`
-	Amount     int64  `json:"amount"`
+	Amount     int    `json:"amount"`
 	PayeeID    string `json:"payee"`
 	Notes      string `json:"notes"`
 	Date       string `json:"date"` // YYYY-MM-DD
