@@ -13,7 +13,6 @@ var headers = []string{
 	"amount",
 	"category",
 	"notes",
-	"error",
 }
 
 type CSVWriter interface {
@@ -83,6 +82,5 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 		amount,
 		categoryName,
 		transaction.Notes,
-		transaction.Error,
 	}
 }

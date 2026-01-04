@@ -28,7 +28,7 @@ type Transaction struct {
 	PayeeID    string `json:"payee"`
 	Notes      string `json:"notes"`
 	Date       string `json:"date"` // YYYY-MM-DD
-	Error      string `json:"error"`
+	// Error      string `json:"error"`
 	// ImportedPayee *string `json:"imported_payee,omitempty"`
 	// Cleared       bool    `json:"cleared"`
 	// Tombstone     bool    `json:"tombstone"`
