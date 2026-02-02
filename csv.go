@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
-	"strconv"
+	"math"
 )
 
 var headers = []string{
@@ -64,7 +65,7 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 	if c := w.categoryMap[transaction.CategoryID]; c != (Category{}) {
 		if c.IsIncome {
 			// flip posting source / destination
-			transaction.Amount *= -1
+			transaction.Amount *= 1
 			categoryName = account.Name
 			accountName = c.Name
 		} else {
@@ -73,13 +74,14 @@ func (w *csvWriter) transactionToRow(account Account, transaction Transaction) [
 		}
 	}
 
-	amount := strconv.Itoa(transaction.Amount)
+	dollars := transaction.Amount / 100
+	cents := int(math.Abs(float64(transaction.Amount))) % 100
 
 	return []string{
 		accountName,
 		transaction.Date,
 		payeeName,
-		amount,
+		fmt.Sprintf("%d.%02d", dollars, cents),
 		categoryName,
 		transaction.Notes,
 	}

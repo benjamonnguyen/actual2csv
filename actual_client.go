@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+// https://actualbudget.org/docs/api/reference
+
 type FetchAccountsResponse struct {
 	Data []Account `json:"data"`
 }
@@ -24,7 +26,7 @@ type Transaction struct {
 	ID         string `json:"id"`
 	AccountID  string `json:"account"`
 	CategoryID string `json:"category"`
-	Amount     int    `json:"amount"`
+	Amount     int    `json:"amount"` // in cents
 	PayeeID    string `json:"payee"`
 	Notes      string `json:"notes"`
 	Date       string `json:"date"` // YYYY-MM-DD
